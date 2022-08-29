@@ -1,0 +1,42 @@
+Dim assemblyDef As AssemblyComponentDefinition = ThisDoc.Document.ComponentDefinition
+Dim oco As AssemblyConstraints = assemblyDef.Constraints
+Dim occ As Inventor.ComponentOccurrence
+For Each occ In assemblyDef.Occurrences.AllLeafOccurrences
+	Dim refDoc As PartDocument = occ.Definition.Document
+	If iProperties.Value(occ.Name, "Project", "Description").Contains("bolt") Or iProperties.Value(occ.Name, "Project", "Description").Contains("Bolt") Or iProperties.Value(occ.Name, "Project", "Description").Contains("screw") Or iProperties.Value(occ.Name, "Project", "Description").Contains("Screw") Then
+		
+		For Each myconstraint As AssemblyConstraint In occ.Constraints						  
+							  
+  
+			boltlength = Parameter(myconstraint.OccurrenceOne.Name, "NLG")
+			partlength = Parameter(myconstraint.OccurrenceTwo.Name, "LEN")
+			
+			boltdiameter = Parameter(myconstraint.OccurrenceOne.Name, "NND")
+			partdiameter = Parameter(myconstraint.OccurrenceTwo.Name, "DIA")
+			
+			
+			
+			If boltlength>partlength
+				myconstraint.OccurrenceOne.Edit
+				i = MessageBox.Show("O comprimento do parafuso é maior do que o comprimento do componente", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Hand, MessageBoxDefaultButton.Button1)
+				Parameter(myconstraint.OccurrenceTwo.Name, "LEN") = boltlength
+			End If
+			
+			If Not boltdiameter = partdiameter
+				myconstraint.OccurrenceOne.Edit
+				i = MessageBox.Show("O diametro do parafuso e do buraco não correspondem", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Hand, MessageBoxDefaultButton.Button1)
+				Parameter(myconstraint.OccurrenceTwo.Name, "DIA") = boltdiameter
+			End If
+					
+		Next
+		occ.Visible = True
+
+	Else
+		occ.Visible = True
+	End If
+	
+
+Next
+
+
+

@@ -1,0 +1,71 @@
+'Dim templateloc As String
+'templateloc = "C:\Users\wwwjm\Desktop\TeamOn\ESI 2\ESI_Template.xlsm"
+
+'Create a new NameValueMap object
+	'oOptions = ThisApplication.TransientObjects.CreateNameValueMap
+
+	'Specify an existing template file to use For formatting colors, fonts, etc
+	'oOptions.Value("Template") = templateloc
+
+	'Specify the start cell
+	'i=3
+	'oOptions.Value("StartingCell") = "A" & i
+
+	'Specify the XLS tab name here the file name is used
+	'oOptions.Value("TableName") = ThisDoc.FileName(False) 'without extension
+
+	'Choose to include the parts list title row in this example "Ye Old List of Parts" is written to the StartingCell
+	'oOptions.Value("IncludeTitle") = False
+
+	'choose to autofit the column width in the xls file
+	'oOptions.Value("AutoFitColumnWidth") = False
+	
+oDoc = ThisDoc.ModelDocument
+'Ensure that we are in an Assembly file - Exit if not
+If oDoc.DocumentType = kPartDocumentObject Then
+	MessageBox.Show("Esta rule só é aplicável em ficheiros de Assembly")
+	Return
+End If
+oDoc = ThisApplication.ActiveDocument
+Dim oBOM As BOM
+oBOM = oDoc.ComponentDefinition.BOM
+
+CSVpath = ThisDoc.Path + "\"
+
+'Indicar o tipo de exportação:
+Dim MyArrayList As New ArrayList
+MyArrayList.Add("Hierarquia")
+MyArrayList.Add("Só os componentes")
+
+Exporterr = InputListBox("O que deseja exportar?" & ClintBrown3D , MyArrayList, d0, Title := "Exportar", ListName := "BoM Type")
+
+If Exporterr = "Hierarquia" Then :GoTo GoAllLevelsExport : End If
+If Exporterr = "Só os componentes" Then : GoTo GoPartExport : End If
+If Exporterr = "" Then : Return : End If
+	
+'STRUCTURED BoM ALL LEVELS:
+GoAllLevelsExport:
+' the structured view to 'all levels'
+	oBOM.StructuredViewFirstLevelOnly = False
+' Make sure that the structured view is enabled.
+	oBOM.StructuredViewEnabled = True
+	Dim oStructuredBOMView As BOMView
+	oStructuredBOMView = oBOM.BOMViews.Item("Structured")
+' Export the BOM view to an Excel file
+	oStructuredBOMView.Export(CSVpath + ThisDoc.FileName(False) + ".xlsx", kMicrosoftExcelFormat)
+GoTo GoLaunch:
+
+
+'PARTS ONLY BoM
+GoPartExport:
+	oBOM.PartsOnlyViewEnabled = True
+	Dim oPartsOnlyBOMView As BOMView
+	oPartsOnlyBOMView = oBOM.BOMViews.Item("Parts Only")
+	oPartsOnlyBOMView.Export (CSVpath + ThisDoc.FileName(False) + ".xlsx",kMicrosoftExcelFormat)
+GoTo GoLaunch:
+
+'Get user input - do you want to see the BoM?
+GoLaunch:
+	i = MessageBox.Show("Pré-visualizar o Excel?", "Exportar", MessageBoxButtons.YesNo)
+	If i = vbYes Then : launchviewer = 1 : Else : launchviewer = 0 : End If 
+	If launchviewer = 1 Then ThisDoc.Launch(CSVpath + ThisDoc.FileName(False) + ".xls")
